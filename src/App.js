@@ -26,23 +26,27 @@ import {
   onSnapshot,
   query,
   orderBy,
+  deleteDoc,
+  doc,
 } from "firebase/firestore";
 
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const loginHanderl = () => {
+//Login 
+const loginHandler = () => {
   const provider = new GoogleAuthProvider();
   signInWithPopup(auth, provider);
 };
 
+//Logout
 const logoutHandler = () => signOut(auth);
 
 function App() {
   const [user, setuser] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-
+  const [doubleTapMessageId, setDoubleTapMessageId] = useState(null);
   const divforscroll = useRef(null);
 
   const submitHandler = async (e) => {
@@ -63,6 +67,26 @@ function App() {
       alert(error);
     }
   };
+
+  const doubleTapHandler = (messageId) => {
+    console.log("Function")
+    if (doubleTapMessageId === messageId) {
+      
+      handleDeleteMessage(messageId);
+      setDoubleTapMessageId(null); // 
+    } else {
+      // User double-tapped on a different message
+      setDoubleTapMessageId(messageId);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId) =>{
+    try{
+      await deleteDoc(doc(db, "Messages", messageId))
+    }catch(error){
+      console.log(error)
+    }
+  }
 
   useEffect(() => {
     const order = query(
@@ -113,6 +137,8 @@ function App() {
                   user={item.uid === user.uid ? "me" : "other"}
                   text={item.text}
                   uri={item.uri}
+                  onDoubleTap={() => doubleTapHandler(item.id)}
+                  showDeleteOption={doubleTapMessageId === item.id}
                 />
               ))}
               <div ref={divforscroll}></div>
@@ -133,8 +159,8 @@ function App() {
           </VStack>
         </Container>
       ) : (
-        <VStack bg={"white"} justifyContent={"center"} h="100vh">
-          <Button onClick={loginHanderl} colorScheme={"purple"}>
+        <VStack bg={"#413b7a"} justifyContent={"center"} h="100vh">
+          <Button onClick={loginHandler} colorScheme={"purple"}>
             Sign In with Google
           </Button>
         </VStack>
